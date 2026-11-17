@@ -13,6 +13,10 @@ THEMES = {
 
 # icon drawings, 30x30, drawn at (0,0); `c` is the accent colour
 ICONS = {
+    "portfolio": lambda c: (
+        f'<circle cx="15" cy="15" r="12.5" fill="none" stroke="{c}" stroke-width="2.4"/>'
+        f'<ellipse cx="15" cy="15" rx="5.5" ry="12.5" fill="none" stroke="{c}" stroke-width="2"/>'
+        f'<path d="M3 11h24M3 19h24" stroke="{c}" stroke-width="2"/>'),
     "projects": lambda c: (
         f'<path d="M2 7h10l3 3h13v16H2z" fill="none" stroke="{c}" stroke-width="2.4" stroke-linejoin="round"/>'
         f'<path d="M9 16l-3 3 3 3M21 16l3 3-3 3M17 15l-4 9" fill="none" stroke="{c}" stroke-width="2" '
@@ -31,7 +35,7 @@ ICONS = {
 INK = {"#a5d6ff": "#0d1117", "#0a66c2": "#ffffff"}  # colour of the "in" letters
 
 BUTTONS = [  # (file name, label, accent colour dark, accent colour light)
-    ("projects", "PROJECTS", "#ffa657", "#bc4c00"),
+    ("portfolio", "PORTFOLIO", "#ffa657", "#bc4c00"),
     ("linkedin", "LINKEDIN", "#a5d6ff", "#0a66c2"),
     ("email", "EMAIL", "#ff7b72", "#cf222e"),
 ]

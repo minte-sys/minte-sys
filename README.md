@@ -6,7 +6,7 @@
 </a>
 
 <p align="center">
-  <a href="https://github.com/minte-sys?tab=repositories"><picture><source media="(prefers-color-scheme: dark)" srcset="btn_projects_dark.svg"><img alt="Projects" src="btn_projects_light.svg" width="32%"></picture></a>
+  <a href="https://minte-sys.github.io"><picture><source media="(prefers-color-scheme: dark)" srcset="btn_portfolio_dark.svg"><img alt="Portfolio" src="btn_portfolio_light.svg" width="32%"></picture></a>
   <a href="https://www.linkedin.com/in/mintesnot-mengesha-b09b0b288/"><picture><source media="(prefers-color-scheme: dark)" srcset="btn_linkedin_dark.svg"><img alt="LinkedIn" src="btn_linkedin_light.svg" width="32%"></picture></a>
   <a href="mailto:mintesnotmengesha55@gmail.com"><picture><source media="(prefers-color-scheme: dark)" srcset="btn_email_dark.svg"><img alt="Email" src="btn_email_light.svg" width="32%"></picture></a>
 </p>
