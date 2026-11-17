@@ -47,12 +47,12 @@ INFO = [
     ("stats_loc",),
 ]
 
+PROMPT = True       # blinking "> █" terminal cursor under the info column
 WIDTH = 58          # characters in the info column
 FONT_SIZE = 16
 ASCII_FONT = 8      # the portrait uses smaller text for more detail
 ASCII_LINE = 10.8
 ASCII_CHAR_W = 4.82
-ASCII_TOP = 20
 LINE_H = 20
 CHAR_W = 9.63       # monospace advance at 16px
 ASCII_X = 15
@@ -219,7 +219,11 @@ def render(theme, ascii_lines, info_lines, shades):
     ascii_cols = max(len(a) for a in ascii_lines)
     info_x = ASCII_X + ascii_cols * ASCII_CHAR_W + 25
     w = int(info_x + WIDTH * CHAR_W + 15)
-    h = int(max(TOP + (len(info_lines) - 1) * LINE_H, ASCII_TOP + (len(ascii_lines) - 1) * ASCII_LINE) + 20)
+    info_rows = len(info_lines) + (2 if PROMPT else 0)
+    h = int(TOP + (info_rows - 1) * LINE_H + 22)
+    # centre the portrait vertically on the card
+    art_h = (len(ascii_lines) - 1) * ASCII_LINE
+    ascii_top = round((h - art_h) / 2 + 3, 1)
 
     out = [f'<?xml version="1.0" encoding="UTF-8"?>',
            f'<svg xmlns="http://www.w3.org/2000/svg" font-family="ConsolasFallback,Consolas,\'DejaVu Sans Mono\',Menlo,monospace" '
@@ -228,12 +232,13 @@ def render(theme, ascii_lines, info_lines, shades):
            f".key{{fill:{t['key']}}} .value{{fill:{t['value']}}} .dots{{fill:{t['dots']}}} "
            f".text{{fill:{t['text']}}} .add{{fill:{t['add']}}} .dele{{fill:{t['dele']}}}",
            "text,tspan{white-space:pre}",
+           "@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}} .cursor{animation:blink 1.1s step-end infinite}",
            " ".join(f".s{k}{{fill-opacity:{t['shade_floor'] + (1 - t['shade_floor']) * k / 9:.2f}}}" for k in range(10)),
            "</style>",
            f'<rect width="{w}px" height="{h}px" fill="{t["bg"]}" stroke="{t["border"]}" rx="15"/>',
-           f'<text x="{ASCII_X}" y="{ASCII_TOP}" class="text" font-size="{ASCII_FONT}px" xml:space="preserve">']
+           f'<text x="{ASCII_X}" y="{ascii_top}" class="text" font-size="{ASCII_FONT}px" xml:space="preserve">']
     for i, a in enumerate(ascii_lines):
-        out.append(f'<tspan x="{ASCII_X}" y="{ASCII_TOP + i * ASCII_LINE:g}">{shade_runs(a, shades[i])}</tspan>')
+        out.append(f'<tspan x="{ASCII_X}" y="{ascii_top + i * ASCII_LINE:g}">{shade_runs(a, shades[i])}</tspan>')
     out.append("</text>")
     out.append(f'<text x="{info_x:.0f}" y="{TOP}" class="text" xml:space="preserve">')
     for i, segs in enumerate(info_lines):
@@ -241,7 +246,13 @@ def render(theme, ascii_lines, info_lines, shades):
             continue
         body = "".join(f'<tspan class="{c}">{escape(s)}</tspan>' for s, c in segs)
         out.append(f'<tspan x="{info_x:.0f}" y="{TOP + i * LINE_H}">{body}</tspan>')
-    out.append("</text>\n</svg>\n")
+    out.append("</text>")
+    if PROMPT:
+        py = TOP + (len(info_lines) + 1) * LINE_H
+        out.append(f'<text x="{info_x:.0f}" y="{py}" class="key">&gt;</text>')
+        out.append(f'<rect class="cursor" x="{info_x + 2 * CHAR_W:.0f}" y="{py - 14}" width="{CHAR_W:.1f}" '
+                   f'height="18" fill="{t["value"]}"/>')
+    out.append("</svg>\n")
     return "\n".join(out)
 
 
