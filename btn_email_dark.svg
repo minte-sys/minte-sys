@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="64" viewBox="0 0 320 64">
+<rect x="1" y="1" width="318" height="62" rx="6" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+<rect x="6" y="56" width="308" height="4" rx="1" fill="#ff7b72"/>
+<g transform="translate(108.0,15)"><rect x="2" y="5" width="26" height="20" rx="2" fill="none" stroke="#ff7b72" stroke-width="2.4"/><path d="M3 7l12 9 12-9" fill="none" stroke="#ff7b72" stroke-width="2.4" stroke-linejoin="round"/></g>
+<text x="152.0" y="38" fill="#c9d1d9" font-size="18" letter-spacing="1.5"
+ font-family="ConsolasFallback,Consolas,'DejaVu Sans Mono',Menlo,monospace">EMAIL</text>
+</svg>

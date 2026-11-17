@@ -6,9 +6,9 @@
 </a>
 
 <p align="center">
-  <a href="https://github.com/minte-sys?tab=repositories"><picture><source media="(prefers-color-scheme: dark)" srcset="buttons/projects_dark.svg"><img alt="Projects" src="buttons/projects_light.svg" width="32%"></picture></a>
-  <a href="https://www.linkedin.com/in/mintesnot-mengesha-b09b0b288/"><picture><source media="(prefers-color-scheme: dark)" srcset="buttons/linkedin_dark.svg"><img alt="LinkedIn" src="buttons/linkedin_light.svg" width="32%"></picture></a>
-  <a href="mailto:mintesnotmengesha55@gmail.com"><picture><source media="(prefers-color-scheme: dark)" srcset="buttons/email_dark.svg"><img alt="Email" src="buttons/email_light.svg" width="32%"></picture></a>
+  <a href="https://github.com/minte-sys?tab=repositories"><picture><source media="(prefers-color-scheme: dark)" srcset="btn_projects_dark.svg"><img alt="Projects" src="btn_projects_light.svg" width="32%"></picture></a>
+  <a href="https://www.linkedin.com/in/mintesnot-mengesha-b09b0b288/"><picture><source media="(prefers-color-scheme: dark)" srcset="btn_linkedin_dark.svg"><img alt="LinkedIn" src="btn_linkedin_light.svg" width="32%"></picture></a>
+  <a href="mailto:mintesnotmengesha55@gmail.com"><picture><source media="(prefers-color-scheme: dark)" srcset="btn_email_dark.svg"><img alt="Email" src="btn_email_light.svg" width="32%"></picture></a>
 </p>
 
 <picture>

@@ -1,6 +1,6 @@
 """Builds the terminal-style link buttons shown under the profile card.
 
-Run once (python make_buttons.py) -> writes buttons/<name>_dark.svg and _light.svg.
+Run once (python make_buttons.py) -> writes btn_<name>_dark.svg and _light.svg.
 The links themselves live in README.md; these are just the pictures.
 """
 import os
@@ -53,9 +53,9 @@ def button(name, label, accent, t):
 
 
 if __name__ == "__main__":
-    os.makedirs("buttons", exist_ok=True)
+    pass
     for name, label, dark, light in BUTTONS:
         for mode, accent in (("dark", dark), ("light", light)):
-            with open(f"buttons/{name}_{mode}.svg", "w", encoding="utf-8") as f:
+            with open(f"btn_{name}_{mode}.svg", "w", encoding="utf-8") as f:
                 f.write(button(name, label, accent, THEMES[mode]))
     print("wrote", len(BUTTONS) * 2, "buttons")
