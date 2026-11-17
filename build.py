@@ -42,12 +42,14 @@ INFO = [
     ("kv", "GitHub", "{username}"),
     ("blank",),
     ("section", "GitHub Stats"),
+    ("stats_building",),
     ("stats_repos",),
     ("stats_commits",),
     ("stats_loc",),
 ]
 
 PROMPT = True       # blinking "> █" terminal cursor under the info column
+BOOT = True         # play a short "boot" animation: neofetch is typed, then everything appears
 WIDTH = 58          # characters in the info column
 FONT_SIZE = 16
 ASCII_FONT = 8      # the portrait uses smaller text for more detail
@@ -136,7 +138,21 @@ def fetch_stats(login):
                 add += sum(w["a"] for w in c["weeks"])
                 dele += sum(w["d"] for w in c["weeks"])
 
-    return dict(repos=page["totalCount"], contributed=d["repositoriesContributedTo"]["totalCount"],
+    # most recently pushed public repo (not this profile repo, which the bot pushes daily)
+    recent = gql("""query($login:String!){user(login:$login){
+        repositories(ownerAffiliations:OWNER,privacy:PUBLIC,isFork:false,first:5,
+                     orderBy:{field:PUSHED_AT,direction:DESC}){nodes{name pushedAt}}}}""",
+                 login=login)["user"]["repositories"]["nodes"]
+    building = when = None
+    for r in recent:
+        if r["name"].lower() != login.lower():
+            building = r["name"]
+            pushed = dt.datetime.fromisoformat(r["pushedAt"].replace("Z", "+00:00"))
+            days = (now.date() - pushed.date()).days
+            when = "today" if days <= 0 else "yesterday" if days == 1 else f"{days} days ago"
+            break
+
+    return dict(building=building, building_when=when, repos=page["totalCount"], contributed=d["repositoriesContributedTo"]["totalCount"],
                 stars=stars, followers=d["followers"]["totalCount"], commits=commits,
                 loc=add - dele, add=add, dele=dele)
 
@@ -192,6 +208,10 @@ def layout(stats):
         elif kind == "stats_commits":
             left = kv("Commits", fmt(st.get("commits")), width=36)
             lines.append(left + [(" | ", "text")] + kv("Followers", fmt(st.get("followers")), width=WIDTH - 39, prefix=""))
+        elif kind == "stats_building":
+            name = st.get("building") or "—"
+            when = st.get("building_when")
+            lines.append(kv("Currently.Building", [(name, "value")] + ([(f" ({when})", "dots")] if when else [])))
         elif kind == "stats_loc":
             lines.append(kv("Lines of Code on GitHub", [
                 (fmt(st.get("loc")), "value"), (" ( ", "text"),
@@ -219,13 +239,23 @@ def render(theme, ascii_lines, info_lines, shades):
     ascii_cols = max(len(a) for a in ascii_lines)
     info_x = ASCII_X + ascii_cols * ASCII_CHAR_W + 25
     w = int(info_x + WIDTH * CHAR_W + 15)
+    top = TOP + (2 * LINE_H if BOOT else 0)              # room for the "$ neofetch" line
     info_rows = len(info_lines) + (2 if PROMPT else 0)
-    h = int(TOP + (info_rows - 1) * LINE_H + 22)
-    # centre the portrait vertically on the card
+    h = int(top + (info_rows - 1) * LINE_H + 22)
     art_h = (len(ascii_lines) - 1) * ASCII_LINE
-    ascii_top = round((h - art_h) / 2 + 3, 1)
+    ascii_top = (h - art_h) / 2 + 3                       # centre the portrait vertically
 
-    out = [f'<?xml version="1.0" encoding="UTF-8"?>',
+    # boot timeline (seconds)
+    cmd = "neofetch"
+    type_start, per_char = 0.4, 0.09
+    type_end = type_start + len(cmd) * per_char
+    art_start = type_end + 0.3
+    info_start = art_start + 0.15
+    per_line = 0.07
+    prompt_at = info_start + len(info_lines) * per_line + 0.2
+    delay = lambda s: f' class="a" style="animation-delay:{s:.2f}s"' if BOOT else ""
+
+    out = ['<?xml version="1.0" encoding="UTF-8"?>',
            f'<svg xmlns="http://www.w3.org/2000/svg" font-family="ConsolasFallback,Consolas,\'DejaVu Sans Mono\',Menlo,monospace" '
            f'width="{w}px" height="{h}px" font-size="{FONT_SIZE}px">',
            "<style>",
@@ -233,25 +263,56 @@ def render(theme, ascii_lines, info_lines, shades):
            f".text{{fill:{t['text']}}} .add{{fill:{t['add']}}} .dele{{fill:{t['dele']}}}",
            "text,tspan{white-space:pre}",
            "@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}} .cursor{animation:blink 1.1s step-end infinite}",
+           "@keyframes boot{from{opacity:0}to{opacity:1}} .a{animation:boot .3s ease-out backwards}",
            " ".join(f".s{k}{{fill-opacity:{t['shade_floor'] + (1 - t['shade_floor']) * k / 9:.2f}}}" for k in range(10)),
            "</style>",
-           f'<rect width="{w}px" height="{h}px" fill="{t["bg"]}" stroke="{t["border"]}" rx="15"/>',
-           f'<text x="{ASCII_X}" y="{ascii_top}" class="text" font-size="{ASCII_FONT}px" xml:space="preserve">']
+           f'<rect width="{w}px" height="{h}px" fill="{t["bg"]}" stroke="{t["border"]}" rx="15"/>']
+
+    # "user@github:~$ neofetch", typed one character at a time
+    if BOOT:
+        user = f"{HANDLE}@github"
+        cmd_x = info_x + (len(user) + 4) * CHAR_W
+        out.append(f'<text x="{info_x:.0f}" y="{TOP}"><tspan class="add">{escape(user)}</tspan>'
+                   f'<tspan class="text">:</tspan><tspan class="value">~</tspan><tspan class="text">$ </tspan></text>')
+        times = [0] + [type_start + k * per_char for k in range(len(cmd) + 1)]
+        widths = [0] + [k * CHAR_W for k in range(len(cmd) + 1)]
+        key_times = ";".join(f"{x / type_end:.4f}" for x in times)
+        out.append(
+            f'<clipPath id="typed"><rect x="{cmd_x:.1f}" y="{TOP - 16}" width="{len(cmd) * CHAR_W:.1f}" height="22">'
+            f'<animate attributeName="width" values="{";".join(f"{x:.1f}" for x in widths)}" keyTimes="{key_times}" '
+            f'dur="{type_end:.2f}s" calcMode="discrete" fill="freeze"/></rect></clipPath>')
+        out.append(f'<text x="{cmd_x:.1f}" y="{TOP}" class="text" clip-path="url(#typed)">{cmd}</text>')
+        # a cursor that follows the typing, then disappears
+        xs = [cmd_x] + [cmd_x + k * CHAR_W for k in range(len(cmd) + 1)]
+        out.append(
+            f'<rect x="{cmd_x + len(cmd) * CHAR_W:.1f}" y="{TOP - 14}" width="{CHAR_W:.1f}" height="18" '
+            f'fill="{t["value"]}" opacity="0">'
+            f'<animate attributeName="x" values="{";".join(f"{x:.1f}" for x in xs)}" keyTimes="{key_times}" '
+            f'dur="{type_end:.2f}s" calcMode="discrete" fill="freeze"/>'
+            f'<animate attributeName="opacity" values="1;1;0" keyTimes="0;0.999;1" dur="{type_end + 0.2:.2f}s" '
+            f'calcMode="discrete" fill="freeze"/></rect>')
+
+    # portrait, revealed top to bottom like a scan
     for i, a in enumerate(ascii_lines):
-        out.append(f'<tspan x="{ASCII_X}" y="{ascii_top + i * ASCII_LINE:g}">{shade_runs(a, shades[i])}</tspan>')
-    out.append("</text>")
-    out.append(f'<text x="{info_x:.0f}" y="{TOP}" class="text" xml:space="preserve">')
+        if not a.strip():
+            continue
+        out.append(f'<text x="{ASCII_X}" y="{ascii_top + i * ASCII_LINE:.1f}" font-size="{ASCII_FONT}px" '
+                   f'xml:space="preserve"{delay(art_start + i * 0.03)}>'
+                   f'<tspan class="text">{shade_runs(a, shades[i])}</tspan></text>')
+
+    # info lines, one after another
     for i, segs in enumerate(info_lines):
         if not segs:
             continue
         body = "".join(f'<tspan class="{c}">{escape(s)}</tspan>' for s, c in segs)
-        out.append(f'<tspan x="{info_x:.0f}" y="{TOP + i * LINE_H}">{body}</tspan>')
-    out.append("</text>")
+        out.append(f'<text x="{info_x:.0f}" y="{top + i * LINE_H}" xml:space="preserve"'
+                   f'{delay(info_start + i * per_line)}>{body}</text>')
+
     if PROMPT:
-        py = TOP + (len(info_lines) + 1) * LINE_H
-        out.append(f'<text x="{info_x:.0f}" y="{py}" class="key">&gt;</text>')
-        out.append(f'<rect class="cursor" x="{info_x + 2 * CHAR_W:.0f}" y="{py - 14}" width="{CHAR_W:.1f}" '
-                   f'height="18" fill="{t["value"]}"/>')
+        py = top + (len(info_lines) + 1) * LINE_H
+        out.append(f'<g{delay(prompt_at)}><text x="{info_x:.0f}" y="{py}" class="key">&gt;</text>'
+                   f'<rect class="cursor" x="{info_x + 2 * CHAR_W:.0f}" y="{py - 14}" width="{CHAR_W:.1f}" '
+                   f'height="18" fill="{t["value"]}"/></g>')
     out.append("</svg>\n")
     return "\n".join(out)
 
